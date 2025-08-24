@@ -15,6 +15,6 @@ public class DemoApplication {
 
     @GetMapping("/health")
     public String healthCheck() {
-        return "OK: Elvis DevOps 2025";
+        return "OK: CI/CD Pipeline with Jenkins";
     }
 }
