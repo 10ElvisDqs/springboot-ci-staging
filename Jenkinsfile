@@ -49,10 +49,20 @@ pipeline {
             }
         }
 
-        stage('Stop Existing Java Processes') {
+        stage('Stop Existing App') {
             steps {
                 sshagent(['jenkis-spring-docker-key']) {
-                    sh 'ssh -o StrictHostKeyChecking=no $STAGING_SERVER "pkill -f java || true"'
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no $STAGING_SERVER "
+                            pids=\\$(ps -ef | grep '${ARTIFACT_NAME}' | grep -v grep | awk '{print \\$2}')
+                            if [ ! -z "\\$pids" ]; then
+                                echo 'Stopping previous instance: \\$pids'
+                                kill -9 \\$pids
+                            else
+                                echo 'No previous instance running'
+                            fi
+                        "
+                    '''
                 }
             }
         }
