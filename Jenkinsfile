@@ -51,16 +51,7 @@ pipeline {
         stage('Deploy to Staging') {
             steps {
                 sshagent(['jenkis-spring-docker-key']) {
-                    sh """
-                        # Copiar el artefacto
-                        scp target/${ARTIFACT_NAME} $STAGING_SERVER:/home/spring_user_java/staging/
-
-                        # Matar todos los procesos Java y levantar la nueva instancia
-                        ssh -o StrictHostKeyChecking=no $STAGING_SERVER "
-                            pkill -f java || true
-                            nohup /opt/java/openjdk/bin/java -jar /home/spring_user_java/staging/${ARTIFACT_NAME} > /home/spring_user_java/staging/spring.log 2>&1 &
-                        "
-                    """
+                    sh 'scp target/${ARTIFACT_NAME} $STAGING_SERVER:/home/spring_user_java/staging/ && ssh -o StrictHostKeyChecking=no $STAGING_SERVER "pkill -f java || true && nohup /opt/java/openjdk/bin/java -jar /home/spring_user_java/staging/${ARTIFACT_NAME} > /home/spring_user_java/staging/spring.log 2>&1 &"'
                 }
             }
         }
