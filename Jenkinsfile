@@ -41,22 +41,36 @@ pipeline {
         //         }
         //     }
         // }
-        stage('Deploy to Staging') {
+        stage('Copy Artifact') {
             steps {
                 sshagent(['jenkis-spring-docker-key']) {
-                    sh """
-                        scp target/${ARTIFACT_NAME} $STAGING_SERVER:/home/spring_user_java/staging/
-                        ssh -o StrictHostKeyChecking=no $STAGING_SERVER "bash -c 'pkill -f java || true; nohup /opt/java/openjdk/bin/java -jar /home/spring_user_java/staging/${ARTIFACT_NAME} > /home/spring_user_java/staging/spring.log 2>&1 &'"
-                    """
+                    sh 'scp target/${ARTIFACT_NAME} $STAGING_SERVER:/home/spring_user_java/staging/'
+                }
+            }
+        }
+
+        stage('Stop Existing Java Processes') {
+            steps {
+                sshagent(['jenkis-spring-docker-key']) {
+                    sh 'ssh -o StrictHostKeyChecking=no $STAGING_SERVER "pkill -f java || true"'
+                }
+            }
+        }
+
+        stage('Start Application') {
+            steps {
+                sshagent(['jenkis-spring-docker-key']) {
+                    sh 'ssh -o StrictHostKeyChecking=no $STAGING_SERVER "nohup /opt/java/openjdk/bin/java -jar /home/spring_user_java/staging/${ARTIFACT_NAME} > /home/spring_user_java/staging/spring.log 2>&1 &"'
                 }
             }
         }
 
         stage('Validate Deployment') {
             steps {
-                sh 'sleep 20'  // Dar tiempo a que la app arranque
+                sh 'sleep 20' // esperar a que la app arranque
                 sh 'curl --fail http://spring-docker-demo-mv:8080/health'
             }
         }
+
     }
 }
