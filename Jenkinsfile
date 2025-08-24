@@ -31,24 +31,39 @@ pipeline {
                 sh 'mvn jacoco:report'
             }
         }
+        stage('Deploy to Staging') {
+            steps {
+                // llave de jenkins
+                sshagent(['jenkis-spring-docker-key']) {
+                    sh 'scp target/${ARTIFACT_NAME} $STAGING_SERVER:/home/spring_user_java/staging/'
+                    // sh 'ssh $STAGING_SERVER "nohup java -jar /home/spring_user_java/staging/${ARTIFACT_NAME} > /dev/null 2>&1 &"'
+                    sh 'ssh -o StrictHostKeyChecking=no $STAGING_SERVER "nohup /opt/java/openjdk/bin/java -jar /home/spring_user_java/staging/${ARTIFACT_NAME} > /home/spring_user_java/staging/spring.log 2>&1 &"'
+                }
+            }
+        }
         // stage('Deploy to Staging') {
         //     steps {
-        //         // llave de jenkins
         //         sshagent(['jenkis-spring-docker-key']) {
-        //             sh 'scp target/${ARTIFACT_NAME} $STAGING_SERVER:/home/spring_user_java/staging/'
-        //             // sh 'ssh $STAGING_SERVER "nohup java -jar /home/spring_user_java/staging/${ARTIFACT_NAME} > /dev/null 2>&1 &"'
-        //             sh 'ssh -o StrictHostKeyChecking=no $STAGING_SERVER "nohup /opt/java/openjdk/bin/java -jar /home/spring_user_java/staging/${ARTIFACT_NAME} > /home/spring_user_java/staging/spring.log 2>&1 &"'
+        //             sh 'scp target/${ARTIFACT_NAME} $STAGING_SERVER:/home/spring_user_java/staging/ && ssh -o StrictHostKeyChecking=no $STAGING_SERVER "pkill -f java || true; nohup /opt/java/openjdk/bin/java -jar /home/spring_user_java/staging/${ARTIFACT_NAME} > /home/spring_user_java/staging/spring.log 2>&1 &"'
         //         }
         //     }
         // }
         stage('Deploy to Staging') {
             steps {
                 sshagent(['jenkis-spring-docker-key']) {
-                    sh 'scp target/${ARTIFACT_NAME} $STAGING_SERVER:/home/spring_user_java/staging/ && ssh -o StrictHostKeyChecking=no $STAGING_SERVER "pkill -f ${ARTIFACT_NAME} || true; nohup /opt/java/openjdk/bin/java -jar /home/spring_user_java/staging/${ARTIFACT_NAME} > /home/spring_user_java/staging/spring.log 2>&1 &"'
+                    sh """
+                        # Copiar el artefacto
+                        scp target/${ARTIFACT_NAME} $STAGING_SERVER:/home/spring_user_java/staging/
+
+                        # Matar todos los procesos Java y levantar la nueva instancia
+                        ssh -o StrictHostKeyChecking=no $STAGING_SERVER "
+                            pkill -f java || true
+                            nohup /opt/java/openjdk/bin/java -jar /home/spring_user_java/staging/${ARTIFACT_NAME} > /home/spring_user_java/staging/spring.log 2>&1 &
+                        "
+                    """
                 }
             }
         }
-
         stage('Validate Deployment') {
             steps {
                 sh 'sleep 10'
