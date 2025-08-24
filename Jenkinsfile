@@ -36,8 +36,8 @@ pipeline {
                 // llave de jenkins
                 sshagent(['jenkis-spring-docker-key']) {
                     sh 'scp target/${ARTIFACT_NAME} $STAGING_SERVER:/home/spring_user_java/staging/'
-                    // sh 'ssh $STAGING_SERVER "nohup java -jar /home/spring_user_java/staging/${ARTIFACT_NAME} > /dev/null 2>&1 &"'
-                    sh 'ssh -o StrictHostKeyChecking=no $STAGING_SERVER "nohup /opt/java/openjdk/bin/java -jar /home/spring_user_java/staging/${ARTIFACT_NAME} > /home/spring_user_java/staging/spring.log 2>&1 &"'
+                    sh 'ssh $STAGING_SERVER "nohup java -jar /home/spring_user_java/staging/${ARTIFACT_NAME} > /dev/null 2>&1 &"'
+                    // sh 'ssh -o StrictHostKeyChecking=no $STAGING_SERVER "nohup /opt/java/openjdk/bin/java -jar /home/spring_user_java/staging/${ARTIFACT_NAME} > /home/spring_user_java/staging/spring.log 2>&1 &"'
                 }
             }
         }
