@@ -15,6 +15,6 @@ public class DemoApplication {
 
     @GetMapping("/health")
     public String healthCheck() {
-        return "OK";
+        return "OK: Elvis DevOps 2025";
     }
 }
