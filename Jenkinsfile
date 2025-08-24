@@ -33,11 +33,27 @@ pipeline {
         }
         stage('Deploy to Staging') {
             steps {
-                // llave de jenkins
                 sshagent(['jenkis-spring-docker-key']) {
-                    sh 'scp target/${ARTIFACT_NAME} $STAGING_SERVER:/home/spring_user_java/staging/'
-                    // sh 'ssh $STAGING_SERVER "nohup java -jar /home/spring_user_java/staging/${ARTIFACT_NAME} > /dev/null 2>&1 &"'
-                    sh 'ssh -o StrictHostKeyChecking=no $STAGING_SERVER "nohup /opt/java/openjdk/bin/java -jar /home/spring_user_java/staging/${ARTIFACT_NAME} > /home/spring_user_java/staging/spring.log 2>&1 &"'
+                    sh """
+                        # Copiar el artefacto
+                        scp target/${ARTIFACT_NAME} $STAGING_SERVER:/home/spring_user_java/staging/
+
+                        # Matar procesos Java previos del mismo JAR
+                        ssh -o StrictHostKeyChecking=no $STAGING_SERVER "
+                            pids=\$(ps -ef | grep '${ARTIFACT_NAME}' | grep -v grep | awk '{print \$2}')
+                            if [ ! -z \"\$pids\" ]; then
+                                echo 'Matando procesos anteriores: \$pids'
+                                kill -9 \$pids
+                            else
+                                echo 'No hay procesos previos corriendo'
+                            fi
+                        "
+
+                        # Lanzar la nueva instancia
+                        ssh -o StrictHostKeyChecking=no $STAGING_SERVER "
+                            nohup /opt/java/openjdk/bin/java -jar /home/spring_user_java/staging/${ARTIFACT_NAME} > /home/spring_user_java/staging/spring.log 2>&1 &
+                        "
+                    """
                 }
             }
         }
